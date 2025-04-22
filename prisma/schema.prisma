@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  username      String     @unique
+  email         String     @unique
+  password_hash String
+  avatar_url    String
+  status        UserStatus
+
+  sentFriendships     Friendship[] @relation("RequesterFriendship")
+  receivedFriendships Friendship[] @relation("RecipientFriendship")
+
+  messages Message[] @relation("SenderMessage")
+  chats    Chat[]    @relation("ChatParticipants")
+}
+
+//Отношения
+model Friendship {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  requester   User @relation("RequesterFriendship", fields: [requesterId], references: [id])
+  requesterId Int
+  recipient   User @relation("RecipientFriendship", fields: [recipientId], references: [id])
+  recipientId Int
+
+  status FriendshipStatus
+}
+
+//Cообщения
+
+model Chat {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group_id     Int?
+  type         ChatType
+  participants User[]   @relation("ChatParticipants")
+
+  messages Message[]
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  content String
+  sender   User @relation("SenderMessage", fields: [senderId], references: [id])
+  senderId Int
+  chat   Chat @relation(fields: [chatId], references: [id])
+  chatId Int
+
+  reply     Message? @relation("ReplyMessage", fields: [replyToId], references: [id])
+  replyToId Int?
+
+  ReferencingMessages Message[] @relation("ReplyMessage")
+}
+
+//Серверы
+
+enum ChatType {
+  SERVER
+  DM
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum ServerRole {
+  ADMIN
+  MEMBER
+}
+
+enum UserStatus {
+  ONLINE
+  OFFLINE
+  IDLE
+  DND
+}
