@@ -3,7 +3,7 @@ import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
 import { jwtConstants } from "./constants";
 import { Reflector } from "@nestjs/core";
-import { IS_NO_AUTH_KEY } from "./decorators/noAuth.decorator";
+import { IS_NO_AUTH_KEY } from "../decorators/noAuth.decorator";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
