@@ -1,7 +1,9 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Request, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, FileTypeValidator, Get, HttpCode, HttpStatus, MaxFileSizeValidator, ParseFilePipe, ParseFilePipeBuilder, Post, Request, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginUserDto, RegisterDto } from './auth.dto';
 import { NoAuth } from '../decorators/noAuth.decorator';
+import { FileInterceptor, NoFilesInterceptor } from '@nestjs/platform-express';
+import { FileSizeValidationPipe } from './fileSizeValidation.pipe';
 
 @Controller('auth')
 export class AuthController {
@@ -11,6 +13,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe())
   @Post('login')
+  @UseInterceptors(NoFilesInterceptor())//form-data without files
   signIn(@Body() signInDto: LoginUserDto) {
     return this.authService.signIn(signInDto)
   }
@@ -23,8 +26,21 @@ export class AuthController {
   @NoAuth()
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe())
+  @UseInterceptors(FileInterceptor('avatar'))//form-data with file
   @Post('register')
-  registration(@Body() dto: RegisterDto) {
+  registration(@UploadedFile(
+    new ParseFilePipeBuilder()
+      .addFileTypeValidator({
+        fileType: 'jpeg',
+      })
+      .addMaxSizeValidator({
+        maxSize: 1000
+      })
+      .build({
+        fileIsRequired: false,
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY
+      }),) avatar: Express.Multer.File,
+    @Body() dto: RegisterDto) {
     return this.authService.createUser(dto);
   }
 }
