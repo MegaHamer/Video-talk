@@ -13,7 +13,7 @@ import { MulterModule } from '@nestjs/platform-express';
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,
-      signOptions: { expiresIn: '60s' },
+      signOptions: { expiresIn: '1d' },
     }),
     MulterModule.register({
       dest: './uploads', // Временная папка для файлов

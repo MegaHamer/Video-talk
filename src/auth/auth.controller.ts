@@ -3,7 +3,8 @@ import { AuthService } from './auth.service';
 import { LoginUserDto, RegisterDto } from './auth.dto';
 import { NoAuth } from '../decorators/noAuth.decorator';
 import { FileInterceptor, NoFilesInterceptor } from '@nestjs/platform-express';
-import { FileSizeValidationPipe } from './fileSizeValidation.pipe';
+import { User } from 'prisma/src/generated/prisma/client';
+import { CurrentUser } from 'src/decorators/currentUser.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -19,19 +20,19 @@ export class AuthController {
   }
 
   @Get('profile')
-  getProfile(@Request() req) {
-    return req.user
+  getProfile(@CurrentUser() user: User) {
+    return this.authService.getProfile(user)
   }
 
   @NoAuth()
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   @UsePipes(new ValidationPipe())
   @UseInterceptors(FileInterceptor('avatar'))//form-data with file
   @Post('register')
   registration(@UploadedFile(
     new ParseFilePipeBuilder()
       .addFileTypeValidator({
-        fileType: 'jpeg',
+        fileType: /(jpg|jpeg|png|webp)$/,
       })
       .addMaxSizeValidator({
         maxSize: 1000

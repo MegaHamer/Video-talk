@@ -4,6 +4,7 @@ import { UsersService } from 'src/users/users.service';
 import { LoginUserDto, RegisterDto } from './auth.dto';
 import { PrismaService } from 'src/prisma.service';
 import * as argon2 from 'argon2';
+import { User } from 'prisma/src/generated/prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -13,9 +14,9 @@ export class AuthService {
         private readonly prisma: PrismaService,
     ) { }
 
-    async signIn(dto:LoginUserDto) {
+    async signIn(dto: LoginUserDto) {
         const user = await this.userService.findByUsername(dto.username)
-        
+
         if (!user || ! await argon2.verify(user.password_hash, dto.password)) {
             throw new UnauthorizedException()
         }
@@ -40,7 +41,7 @@ export class AuthService {
         const hashedPassword = await argon2.hash(dto.password, {
             type: argon2.argon2id,
             memoryCost: 65536,
-          });
+        });
 
         // Создание пользователя
         const user = await this.prisma.user.create({
@@ -58,5 +59,20 @@ export class AuthService {
         const accessToken = this.jwtService.sign(payload);
 
         return { accessToken };
+    }
+
+    async getProfile(user: User) {
+        return await this.prisma.user.findUnique({
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                avatar_url: true,
+                status: true,
+            },
+            where: {
+                id: user.id
+            }
+        })
     }
 }

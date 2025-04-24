@@ -1,5 +1,7 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+  output   = "src/generated/prisma/client"
 }
 
 datasource db {
@@ -37,6 +39,8 @@ model Friendship {
   recipientId Int
 
   status FriendshipStatus
+
+  @@unique([requesterId, recipientId])
 }
 
 //Cообщения
