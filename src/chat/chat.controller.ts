@@ -21,36 +21,13 @@ export class ChatController {
   @HttpCode(HttpStatus.OK)
   @Get("visible")
   getVisibleChats(@CurrentUser() user: User) {
-    return [
-      {
-        id: 1,
-        name: 'chat 1',
-        status: "ACTIVE",
-        image_url: [
-          {
-            url: "http://localhost/user1.png"
-          },
-          {
-            url: "http://localhost/user2.png"
-          }
-        ]
-      },
-      {
-        id: 2,
-        name: 'chat 2',
-        status: "OFFLINE",
-        image_url: "http://localhost/chat2.png"
-      },
-    ]
+    return this.chatService.getVisibleChats(user)
   }
 
   @HttpCode(HttpStatus.OK)
   @Patch(":id/hide")
-  hideChat(@CurrentUser() user: User) {
-    return {
-      "success": true,
-      "message": "Чат скрыт"
-    }
+  hideChat(@CurrentUser() user: User, @Param() params: ParamsChatDTO) {
+    return this.chatService.hideChat(user, params)
   }
 
   @HttpCode(HttpStatus.CREATED)

@@ -68,20 +68,36 @@ export class ChatService {
     }
 
     async getVisibleChats(user: User) {
-        // const chats = await this.prisma.chat.findMany({
-        //     where: {
-        //         participants: {
-        //             every: {
-        //                 id: user.id
-        //             }
-        //         }
-        //     }
-        // })
-        return "VisibleChats"
+        const { id: userId } = user
+        const chats = await this.prisma.chat.findMany({
+            where: { members: { some: { userId: userId, visibleChat: true } } }
+        })
+        return chats
     }
 
-    async hideChat(user: User, chat) {
-        return "chat is hidden"
+    async hideChat(user: User, chatDTO: ParamsChatDTO) {
+        const { id } = chatDTO
+        const { id: userId } = user
+
+        const existedChat = await this.prisma.chatMember.findUnique({
+            where: { chatId_userId: { chatId: id, userId: userId } }
+        })
+        if (!existedChat) {
+            throw new NotFoundException("Chat not found")
+        }
+        if (existedChat.visibleChat == false) {
+            return { success: "chat is hidden" }
+        }
+
+        const chat = await this.prisma.chatMember.update({
+            where: {
+                chatId_userId: { chatId: id, userId: userId }
+            },
+            data: {
+                visibleChat: false
+            }
+        })
+        return { success: "chat is hidden" }
     }
 
     async createPrivateChat(user: User, DTO: CreatePrivateChatDto) {
@@ -292,6 +308,7 @@ export class ChatService {
             where: { chatId_userId: { chatId: chat.id, userId: userId } }
         })
     }
+
 
     async sendMessage(user: User, sendMessageDto) {
         return "message is sended"
