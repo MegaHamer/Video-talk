@@ -92,3 +92,18 @@ export class ChangeChatDTO {
     @Type(() => BodyChangeChatDTO)
     body: BodyChangeChatDTO;
 }
+
+//add user group chat
+export class AddGroupChatDto {
+    @IsArray()
+    @ArrayMinSize(1, { message: 'Chat must have at least 1 member' })
+    @IsNumber({}, { each: true, message: 'Each member ID must be a number' })
+    @Transform(({ value }) => {
+        try {
+            return JSON.parse(value);
+        } catch {
+            return value;
+        }
+    })
+    memberIds: number[];
+}

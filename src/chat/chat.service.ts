@@ -164,7 +164,8 @@ export class ChatService {
                 AND: [
                     { members: { some: { userId: user.id } } },
                     { members: { some: { userId: DTO.memberId } } },
-                ]
+                ],
+                type: 'PRIVATE'
             },
             include: {
                 members: {
@@ -368,6 +369,122 @@ export class ChatService {
             data: { name: chatName }
         })
         return { success: "Chat updated" }
+    }
+
+    async showChat(user: User, DTO: ParamsChatDTO) {
+        const { id: userId } = user
+        const { id: chatId } = DTO
+
+        const existedChat = await this.prisma.chatMember.findUnique({
+            where: { chatId_userId: { chatId: chatId, userId: userId } }
+        })
+        if (!existedChat) {
+            throw new NotFoundException("Chat not found")
+        }
+
+        if (existedChat.visibleChat == true) {
+            return { success: "chat is shown" }
+        }
+
+        const chat = await this.prisma.chatMember.update({
+            where: {
+                chatId_userId: { chatId: chatId, userId: userId }
+            },
+            data: {
+                visibleChat: true
+            }
+        })
+        return { success: "chat is shown" }
+    }
+
+    async addUserToChat(user: User, DTO: { memberIds: number[]; id: number; }) {
+        const { id: userId } = user
+        const { id: ChatId, memberIds } = DTO
+        //пользователи есть?
+        const usersInList = await this.prisma.user.findMany({
+            where: {
+                id: { in: memberIds },
+            }
+        })
+        if (usersInList.length != memberIds.length) {
+            const NotFoundUsers = memberIds.filter(memberId => !usersInList
+                .map(member => member.id)
+                .includes(memberId))
+            if (NotFoundUsers.includes(userId)) throw new BadRequestException("User can't join yourself")
+            throw new NotFoundException(`No users with IDs ${NotFoundUsers.join(', ')} were found.`)
+        }
+        //друзья ?
+        const friendsInList = await this.prisma.user.findMany({
+            where: {
+                AND: [
+                    { id: { in: memberIds } },
+                    {
+                        OR: [
+                            {
+                                sentFriendships: {
+                                    some: {
+                                        recipientId: user.id,
+                                        status: 'ACCEPTED'
+                                    }
+                                }
+                            },
+                            {
+                                receivedFriendships: {
+                                    some: {
+                                        requesterId: user.id,
+                                        status: 'ACCEPTED'
+                                    }
+                                }
+                            },
+                        ]
+                    }
+                ]
+            }
+        })
+        if (friendsInList.length != memberIds.length) {
+            const notUsers = memberIds.filter(memberId => !friendsInList
+                .map(member => member.id)
+                .includes(memberId)
+            )
+            throw new BadRequestException(`Users with IDs ${notUsers.join(', ')} are not friends`)
+        }
+        //чат есть?
+        const existedChat = await this.prisma.chat.findUnique({
+            where: {
+                id: ChatId,
+                members: {
+                    some: {
+                        userId: userId
+                    }
+                }
+            },
+            select: {
+                id: true,
+                type: true,
+                members: {
+                    select: {
+                        userId: true,
+                        role: true
+                    }
+                }
+            }
+        })
+        if (!existedChat) throw new NotFoundException("Chat not found")
+        //груповой?
+        if (existedChat.type != 'GROUP') throw new BadRequestException("Chat must be type group")
+        // пользователи которых нет
+        const notMembers = existedChat.members
+            .filter(member => !memberIds.includes(member.userId))
+
+        //добавить пользователей
+        await this.prisma.chatMember.createMany({
+            data: notMembers.map(user => ({
+                visibleChat: true,
+                chatId: ChatId,
+                userId: user.userId
+            }))
+        })
+        return { success: "User successfuly added" }
     }
 
 

@@ -4,7 +4,7 @@ import { FileInterceptor, NoFilesInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from 'src/decorators/currentUser.decorator';
 import { User } from 'prisma/src/generated/prisma/client';
 import { BodyAndParam, BodyAndParamAndQuery, ParamAndQuery } from 'src/decorators/body-and-param.decorator';
-import { BodyChangeChatDTO, ChangeChatDTO, CreateGroupChatDto, CreatePrivateChatDto, ParamsChatDTO, ParamsDTO, SendMessageDto } from './chat.dto';
+import { AddGroupChatDto, BodyChangeChatDTO, ChangeChatDTO, CreateGroupChatDto, CreatePrivateChatDto, ParamsChatDTO, ParamsDTO, SendMessageDto } from './chat.dto';
 import { classToPlain, plainToClass, plainToInstance } from 'class-transformer';
 import { ChatResponseDto } from 'src/entities/chat.entity';
 
@@ -27,6 +27,12 @@ export class ChatController {
   @HttpCode(HttpStatus.OK)
   @Patch(":id/hide")
   async hideChat(@CurrentUser() user: User, @Param() params: ParamsChatDTO) {
+    return await this.chatService.hideChat(user, params)
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Patch(":id/show")
+  async showChat(@CurrentUser() user: User, @Param() params: ParamsChatDTO) {
     return await this.chatService.hideChat(user, params)
   }
 
@@ -74,6 +80,18 @@ export class ChatController {
   ) {
     const BodyAndParam = { body: body, params: params }
     return await this.chatService.changeChat(user, BodyAndParam, image)
+  }
+
+  @HttpCode(HttpStatus.CREATED)
+  @Post(":id/add")
+  @UseInterceptors(NoFilesInterceptor())
+  async addUser(
+    @CurrentUser() user: User,
+    @Param() Param: ParamsChatDTO,
+    @Body() body: AddGroupChatDto
+  ) {
+    const bodyAndParam = { ...Param, ...body }
+    return await this.chatService.addUserToChat(user, bodyAndParam)
   }
 
 
