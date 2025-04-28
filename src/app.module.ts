@@ -5,9 +5,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/auth.guard';
 import { FriendsModule } from './friends/friends.module';
 import { PrismaService } from './prisma.service';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
-  imports: [UsersModule, AuthModule, FriendsModule],
+  imports: [UsersModule, AuthModule, FriendsModule, ChatModule],
   providers: [
     {
       provide: APP_GUARD,
