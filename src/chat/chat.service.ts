@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { $Enums, Chat, User } from 'prisma/src/generated/prisma/client';
-import { CreateGroupChatDto, CreatePrivateChatDto, ParamsChatDTO, ParamsDTO } from './chat.dto';
+import { ChangeChatDTO, CreateGroupChatDto, CreatePrivateChatDto, ParamsChatDTO, ParamsDTO } from './chat.dto';
 import { PrismaService } from 'src/prisma.service';
 import { UsersService } from 'src/users/users.service';
 
@@ -70,9 +70,53 @@ export class ChatService {
     async getVisibleChats(user: User) {
         const { id: userId } = user
         const chats = await this.prisma.chat.findMany({
-            where: { members: { some: { userId: userId, visibleChat: true } } }
+            where: {
+                members: { some: { userId: userId, visibleChat: true } },
+                type: {
+                    not: 'SERVER'
+                }
+            },
+            select: {
+                id: true,
+                name: true,
+                type: true,
+                members: {
+                    select: {
+                        user: {
+                            select: {
+                                id: true,
+                                avatar_url: true,
+                                status: true,
+                                username: true
+                            }
+                        },
+                        role: true
+                    }
+                }
+            }
         })
-        return chats
+        const formattedChats = chats.map(chat => {
+            let displayName = chat.name;
+
+            if (chat.type === 'PRIVATE') {
+                const otherMember = chat.members.find(m => m.user.id !== user.id);
+                displayName = otherMember?.user.username || 'Deleted User';
+            }
+
+            return {
+                id: chat.id,
+                type: chat.type,
+                name: displayName,
+                members: chat.members.map(m => ({
+                    id: m.user.id,
+                    avatar_url: m.user.avatar_url,
+                    status: m.user.status,
+                    username: m.user.username,
+                    role: m.role
+                }))
+            };
+        });
+        return formattedChats
     }
 
     async hideChat(user: User, chatDTO: ParamsChatDTO) {
@@ -307,6 +351,23 @@ export class ChatService {
         await this.prisma.chatMember.delete({
             where: { chatId_userId: { chatId: chat.id, userId: userId } }
         })
+    }
+
+    async changeChat(user: User, DTO: ChangeChatDTO, image: Express.Multer.File) {
+        const { id: chatId } = DTO.params
+        const { name: chatName } = DTO.body
+        const { id: userId } = user
+
+        const owner = await this.prisma.chatMember.findUnique({
+            where: { chatId_userId: { chatId: chatId, userId: userId } }
+        })
+        if (!owner) throw new NotFoundException("Chat not found")
+        if (owner.role != 'OWNER') throw new ForbiddenException("only the chat owner can change it.")
+        await this.prisma.chat.update({
+            where: { id: chatId },
+            data: { name: chatName }
+        })
+        return { success: "Chat updated" }
     }
 
 

@@ -3,10 +3,14 @@ import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { PrismaService } from 'src/prisma.service';
 import { UsersModule } from 'src/users/users.module';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
-  imports:[
-    UsersModule
+  imports: [
+    UsersModule,
+    MulterModule.register({
+      dest: './uploads', // Временная папка для файлов
+    }),
   ],
   controllers: [ChatController],
   providers: [
@@ -14,4 +18,4 @@ import { UsersModule } from 'src/users/users.module';
     ChatService
   ],
 })
-export class ChatModule {}
+export class ChatModule { }

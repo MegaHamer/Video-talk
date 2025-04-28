@@ -80,3 +80,15 @@ export class CreateGroupChatDto {
     @IsNotEmpty()
     name: string;
 }
+
+//change chat
+export class BodyChangeChatDTO{
+    @IsString()
+    name: string;
+}
+export class ChangeChatDTO {
+    @Type(() => ParamsChatDTO)
+    params: ParamsChatDTO;
+    @Type(() => BodyChangeChatDTO)
+    body: BodyChangeChatDTO;
+}

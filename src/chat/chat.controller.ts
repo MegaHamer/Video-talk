@@ -1,10 +1,10 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseFilePipeBuilder, Patch, Post, Put, Query, UploadedFile, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { FileInterceptor, NoFilesInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from 'src/decorators/currentUser.decorator';
 import { User } from 'prisma/src/generated/prisma/client';
 import { BodyAndParam, BodyAndParamAndQuery, ParamAndQuery } from 'src/decorators/body-and-param.decorator';
-import { CreateGroupChatDto, CreatePrivateChatDto, ParamsChatDTO, ParamsDTO, SendMessageDto } from './chat.dto';
+import { BodyChangeChatDTO, ChangeChatDTO, CreateGroupChatDto, CreatePrivateChatDto, ParamsChatDTO, ParamsDTO, SendMessageDto } from './chat.dto';
 import { classToPlain, plainToClass, plainToInstance } from 'class-transformer';
 import { ChatResponseDto } from 'src/entities/chat.entity';
 
@@ -20,14 +20,14 @@ export class ChatController {
 
   @HttpCode(HttpStatus.OK)
   @Get("visible")
-  getVisibleChats(@CurrentUser() user: User) {
-    return this.chatService.getVisibleChats(user)
+  async getVisibleChats(@CurrentUser() user: User) {
+    return await this.chatService.getVisibleChats(user)
   }
 
   @HttpCode(HttpStatus.OK)
   @Patch(":id/hide")
-  hideChat(@CurrentUser() user: User, @Param() params: ParamsChatDTO) {
-    return this.chatService.hideChat(user, params)
+  async hideChat(@CurrentUser() user: User, @Param() params: ParamsChatDTO) {
+    return await this.chatService.hideChat(user, params)
   }
 
   @HttpCode(HttpStatus.CREATED)
@@ -50,20 +50,30 @@ export class ChatController {
   @Delete(':id/leave')
   async leaveChat(@CurrentUser() user: User, @Param() paramsDTO: ParamsChatDTO) {
     return await this.chatService.leaveGroup(user, paramsDTO)
-    // {
-    //   "success": true,
-    //   "message": "Вы вышли из чата"
-    // }
   }
 
   @HttpCode(HttpStatus.OK)
   @Patch(":id")
-  changeChat(@CurrentUser() user: User) {
-    return {
-      "id": 2,
-      "name": "Новое название",
-      "avatar": "https://storage.com/chats/2.jpg"
-    }
+  @UseInterceptors(FileInterceptor('image'))
+  async changeChat(
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: /(jpg|jpeg|png|webp)$/,
+        })
+        .addMaxSizeValidator({
+          maxSize: 1000
+        })
+        .build({
+          fileIsRequired: false,
+          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY
+        })) image: Express.Multer.File,
+    @CurrentUser() user: User,
+    @Body() body: BodyChangeChatDTO,
+    @Param() params: ParamsChatDTO
+  ) {
+    const BodyAndParam = { body: body, params: params }
+    return await this.chatService.changeChat(user, BodyAndParam, image)
   }
 
 
