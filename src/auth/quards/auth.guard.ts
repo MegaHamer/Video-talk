@@ -5,6 +5,7 @@ import { jwtConstants } from "../constants";
 import { Reflector } from "@nestjs/core";
 import { IS_NO_AUTH_KEY } from "../decorators/noAuth.decorator";
 import { PrismaService } from "src/prisma.service";
+import { UsersService } from "src/users/users.service";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -12,6 +13,7 @@ export class AuthGuard implements CanActivate {
         private jwtService: JwtService,
         private reflector: Reflector,
         private prisma: PrismaService,
+        private readonly userService: UsersService
     ) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -25,24 +27,36 @@ export class AuthGuard implements CanActivate {
         }
 
         const request = context.switchToHttp().getRequest()
+        //jwt auth
         const token = this.extractTokenFromHeader(request)
-        if (!token) {
-            throw new UnauthorizedException()
+        if (token) {
+            try {
+                const payload = await this.jwtService.verifyAsync(
+                    token,
+                    {
+                        secret: jwtConstants.secret
+                    }
+                )
+                const userFromDb = await this.prisma.user.findFirst({
+                    where: { id: payload.sub }
+                });
+                request.currentUser = userFromDb
+            } catch {
+                throw new UnauthorizedException()
+            } finally {
+                return true
+            }
         }
-        try {
-            const payload = await this.jwtService.verifyAsync(
-                token,
-                {
-                    secret: jwtConstants.secret
-                }
+        //session auth
+        if (typeof request.session.userId === 'undefined') {
+            throw new UnauthorizedException(
+                'The user is not logged in. Please log in to gain access.'
             )
-            const userFromDb = await this.prisma.user.findFirst({
-                where: { id: payload.sub }
-            });
-            request.currentUser = userFromDb
-        } catch {
-            throw new UnauthorizedException()
         }
+        const user = await this.userService.findById(request.session.userId)
+
+        request.currentUser = user
+
         return true
     }
     extractTokenFromHeader(request: Request): string | undefined {

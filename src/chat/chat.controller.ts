@@ -84,6 +84,7 @@ export class ChatController {
     return await this.chatService.changeChat(user, BodyAndParam, image)
   }
 
+  @ChatRoles('OWNER','MEMBER')
   @HttpCode(HttpStatus.CREATED)
   @Post(":chatId/add")
   @UseInterceptors(NoFilesInterceptor())

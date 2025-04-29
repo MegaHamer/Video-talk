@@ -23,8 +23,6 @@ export class RolesGuard implements CanActivate {
         const user = request.currentUser as User
         const chatId = Number(request.params.chatId);
 
-        if (!chatId) return true
-
         const chatMember = await this.prisma.chatMember.findUnique({
             where: { chatId_userId: { chatId, userId: user.id } },
             select: { role: true, chat: { select: { type: true } } }
