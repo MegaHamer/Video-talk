@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
-import { jwtConstants } from "./constants";
+import { jwtConstants } from "../constants";
 import { Reflector } from "@nestjs/core";
 import { IS_NO_AUTH_KEY } from "../decorators/noAuth.decorator";
 import { PrismaService } from "src/prisma.service";

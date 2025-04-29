@@ -1,12 +1,13 @@
 import { Body, ClassSerializerInterceptor, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseFilePipeBuilder, Patch, Post, Put, Query, UploadedFile, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { FileInterceptor, NoFilesInterceptor } from '@nestjs/platform-express';
-import { CurrentUser } from 'src/decorators/currentUser.decorator';
-import { User } from 'prisma/src/generated/prisma/client';
-import { BodyAndParam, BodyAndParamAndQuery, ParamAndQuery } from 'src/decorators/body-and-param.decorator';
+import { CurrentUser } from 'src/auth/decorators/currentUser.decorator';
+import { ChatRole, User } from 'prisma/src/generated/prisma/client';
+import { BodyAndParam, BodyAndParamAndQuery, ParamAndQuery } from 'src/libs/common/decorators/body-and-param.decorator';
 import { AddGroupChatDto, BodyChangeChatDTO, ChangeChatDTO, CreateGroupChatDto, CreatePrivateChatDto, ParamsChatDTO, ParamsDTO, SendMessageDto } from './chat.dto';
 import { classToPlain, plainToClass, plainToInstance } from 'class-transformer';
 import { ChatResponseDto } from 'src/entities/chat.entity';
+import { ChatRoles } from 'src/auth/decorators/chatRoles.decorator';
 
 @Controller('chats')
 export class ChatController {
@@ -58,8 +59,9 @@ export class ChatController {
     return await this.chatService.leaveGroup(user, paramsDTO)
   }
 
+  @ChatRoles('OWNER')
   @HttpCode(HttpStatus.OK)
-  @Patch(":id")
+  @Patch(":chatId")
   @UseInterceptors(FileInterceptor('image'))
   async changeChat(
     @UploadedFile(
@@ -83,7 +85,7 @@ export class ChatController {
   }
 
   @HttpCode(HttpStatus.CREATED)
-  @Post(":id/add")
+  @Post(":chatId/add")
   @UseInterceptors(NoFilesInterceptor())
   async addUser(
     @CurrentUser() user: User,

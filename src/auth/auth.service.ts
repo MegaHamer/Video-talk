@@ -1,62 +1,60 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
-import { LoginUserDto, RegisterDto } from './auth.dto';
 import { PrismaService } from 'src/prisma.service';
 import * as argon2 from 'argon2';
 import { User } from 'prisma/src/generated/prisma/client';
+import { RegisterDto } from './dto/register.dto';
+import { Request, Response } from 'express';
+import { LoginUserDto } from './dto/login.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
     constructor(
+        private readonly configService: ConfigService,
         private userService: UsersService,
         private jwtService: JwtService,
         private readonly prisma: PrismaService,
     ) { }
 
-    async signIn(dto: LoginUserDto) {
-        const user = await this.userService.findByUsername(dto.username)
+    async signIn(req: Request, dto: LoginUserDto) {
+        const { email, password } = dto
+        const user = await this.userService.findByEmail(email)
 
-        if (!user || ! await argon2.verify(user.password_hash, dto.password)) {
+        if (!user || ! await argon2.verify(user.password_hash, password)) {
             throw new UnauthorizedException()
         }
         const payload = { sub: user.id, username: user.username };
+        this.saveSession(req, user)
         return {
             access_token: await this.jwtService.signAsync(payload),
         };
     }
 
-    async createUser(
+    async register(
+        req: Request,
         dto: RegisterDto
     ) {
-        const existingUser = await this.prisma.user.findFirst({
-            where: { OR: [{ email: dto.email }, { username: dto.username }] },
-        });
+        const { email, password, username } = dto
+        const existingUser = await this.userService.findByEmail(email)
 
         if (existingUser) {
-            throw new ConflictException('Пользователь с таким email или username уже существует');
+            throw new ConflictException('The user with this email already exists');
         }
 
-        // Хеширование пароля (bcrypt)
-        const hashedPassword = await argon2.hash(dto.password, {
-            type: argon2.argon2id,
-            memoryCost: 65536,
-        });
-
-        // Создание пользователя
-        const user = await this.prisma.user.create({
-            data: {
-                email: dto.email,
-                username: dto.username,
-                password_hash: hashedPassword,
-                avatar_url: "",
-                status: 'OFFLINE'
-            },
-        });
+        const newUser = await this.userService.create(
+            email,
+            password,
+            username,
+            ''
+        )
 
         // Генерация JWT-токена
-        const payload = { sub: user.id, username: user.username };
+        const payload = { sub: newUser.id, username: newUser.username };
         const accessToken = this.jwtService.sign(payload);
+
+        this.saveSession(req, newUser)
 
         return { accessToken };
     }
@@ -73,6 +71,39 @@ export class AuthService {
             where: {
                 id: user.id
             }
+        })
+    }
+
+    async logout(req: Request, res: Response): Promise<void> {
+        return new Promise((resolve, reject) => {
+            req.session.destroy(err => {
+                if (err) {
+                    return reject(
+                        new InternalServerErrorException("Failed to end the session. There may be a problem with the server or the session has already been completed.")
+                    )
+                }
+                res.clearCookie(
+                    this.configService.getOrThrow<string>('SESSION_NAME')
+                )
+                resolve()
+            })
+        })
+    }
+    async saveSession(req: Request, user: User) {
+        return new Promise((resolve, reject) => {
+            req.session.userId = user.id
+
+            req.session.save(err => {
+                if (err) {
+                    return reject(
+                        new InternalServerErrorException("Couldn't save the session. Check if the session settings are configured correctly.")
+                    )
+                }
+
+                resolve({
+                    user
+                })
+            })
         })
     }
 }

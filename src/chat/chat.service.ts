@@ -120,11 +120,11 @@ export class ChatService {
     }
 
     async hideChat(user: User, chatDTO: ParamsChatDTO) {
-        const { id } = chatDTO
+        const { chatId } = chatDTO
         const { id: userId } = user
 
         const existedChat = await this.prisma.chatMember.findUnique({
-            where: { chatId_userId: { chatId: id, userId: userId } }
+            where: { chatId_userId: { chatId, userId: userId } }
         })
         if (!existedChat) {
             throw new NotFoundException("Chat not found")
@@ -135,7 +135,7 @@ export class ChatService {
 
         const chat = await this.prisma.chatMember.update({
             where: {
-                chatId_userId: { chatId: id, userId: userId }
+                chatId_userId: { chatId, userId: userId }
             },
             data: {
                 visibleChat: false
@@ -295,12 +295,12 @@ export class ChatService {
     }
 
     async leaveGroup(user: User, chatDTO: ParamsChatDTO) {
-        const { id } = chatDTO
+        const { chatId } = chatDTO
         const { id: userId } = user
         //проверить что чат - группа и пользователь в нем состоит
         const chat = await this.prisma.chat.findUnique({
             where: {
-                id,
+                id: chatId,
                 members: {
                     some: {
                         userId
@@ -355,7 +355,7 @@ export class ChatService {
     }
 
     async changeChat(user: User, DTO: ChangeChatDTO, image: Express.Multer.File) {
-        const { id: chatId } = DTO.params
+        const { chatId } = DTO.params
         const { name: chatName } = DTO.body
         const { id: userId } = user
 
@@ -373,7 +373,7 @@ export class ChatService {
 
     async showChat(user: User, DTO: ParamsChatDTO) {
         const { id: userId } = user
-        const { id: chatId } = DTO
+        const { chatId } = DTO
 
         const existedChat = await this.prisma.chatMember.findUnique({
             where: { chatId_userId: { chatId: chatId, userId: userId } }
@@ -397,9 +397,9 @@ export class ChatService {
         return { success: "chat is shown" }
     }
 
-    async addUserToChat(user: User, DTO: { memberIds: number[]; id: number; }) {
+    async addUserToChat(user: User, DTO: { memberIds: number[]; chatId: number; }) {
         const { id: userId } = user
-        const { id: ChatId, memberIds } = DTO
+        const { chatId, memberIds } = DTO
         //пользователи есть?
         const usersInList = await this.prisma.user.findMany({
             where: {
@@ -451,7 +451,7 @@ export class ChatService {
         //чат есть?
         const existedChat = await this.prisma.chat.findUnique({
             where: {
-                id: ChatId,
+                id: chatId,
                 members: {
                     some: {
                         userId: userId
@@ -480,7 +480,7 @@ export class ChatService {
         await this.prisma.chatMember.createMany({
             data: notMembers.map(user => ({
                 visibleChat: true,
-                chatId: ChatId,
+                chatId: chatId,
                 userId: user.userId
             }))
         })

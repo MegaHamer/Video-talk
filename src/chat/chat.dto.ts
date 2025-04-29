@@ -31,7 +31,7 @@ export class MixedDTO {
 export class ParamsChatDTO {
     @IsNumber()
     @Transform(({ value }) => parseInt(value, 10))
-    id: number;
+    chatId: number;
 }
 export class BodySendMessageDto {
     @IsString()

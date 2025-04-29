@@ -1,10 +1,12 @@
-import { Body, Controller, FileTypeValidator, Get, HttpCode, HttpStatus, MaxFileSizeValidator, ParseFilePipe, ParseFilePipeBuilder, Post, Request, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, FileTypeValidator, Get, HttpCode, HttpStatus, MaxFileSizeValidator, ParseFilePipe, ParseFilePipeBuilder, Post, Req, Res, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginUserDto, RegisterDto } from './auth.dto';
-import { NoAuth } from '../decorators/noAuth.decorator';
+import { NoAuth } from './decorators/noAuth.decorator';
 import { FileInterceptor, NoFilesInterceptor } from '@nestjs/platform-express';
 import { User } from 'prisma/src/generated/prisma/client';
-import { CurrentUser } from 'src/decorators/currentUser.decorator';
+import { CurrentUser } from 'src/auth/decorators/currentUser.decorator';
+import { RegisterDto } from './dto/register.dto';
+import { Request, Response } from 'express';
+import { LoginUserDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -15,8 +17,21 @@ export class AuthController {
   @UsePipes(new ValidationPipe())
   @Post('login')
   @UseInterceptors(NoFilesInterceptor())//form-data without files
-  signIn(@Body() signInDto: LoginUserDto) {
-    return this.authService.signIn(signInDto)
+  signIn(
+    @Req() req: Request,
+    @Body() signInDto: LoginUserDto
+  ) {
+    return this.authService.signIn(req, signInDto)
+  }
+
+  @NoAuth()
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    return this.authService.logout(req, res)
   }
 
   @Get('profile')
@@ -29,7 +44,7 @@ export class AuthController {
   @UsePipes(new ValidationPipe())
   @UseInterceptors(FileInterceptor('avatar'))//form-data with file
   @Post('register')
-  registration(@UploadedFile(
+  register(@UploadedFile(
     new ParseFilePipeBuilder()
       .addFileTypeValidator({
         fileType: /(jpg|jpeg|png|webp)$/,
@@ -41,7 +56,8 @@ export class AuthController {
         fileIsRequired: false,
         errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY
       }),) avatar: Express.Multer.File,
+    @Req() req: Request,
     @Body() dto: RegisterDto) {
-    return this.authService.createUser(dto);
+    return this.authService.register(req, dto);
   }
 }

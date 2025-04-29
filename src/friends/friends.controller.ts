@@ -3,7 +3,7 @@ import { FriendsService } from './friends.service';
 import { FriendRequestDto, UserFriendDto } from './friends.dto';
 import { NoFilesInterceptor } from '@nestjs/platform-express';
 import { UsersService } from 'src/users/users.service';
-import { CurrentUser } from 'src/decorators/currentUser.decorator';
+import { CurrentUser } from 'src/auth/decorators/currentUser.decorator';
 import { User } from 'prisma/src/generated/prisma/client';
 
 @Controller('friends')
