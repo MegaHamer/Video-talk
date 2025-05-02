@@ -74,6 +74,7 @@ export class FriendsService {
     }
 
     async listOfFriends(user: User) {
+        console.log('frinds service',user)
         const requests = await this.prisma.friendship.findMany({
             where: {
                 OR: [

@@ -23,7 +23,7 @@ export class AuthService {
         const user = await this.userService.findByEmail(email)
 
         if (!user || ! await argon2.verify(user.password_hash, password)) {
-            throw new UnauthorizedException()
+            throw new UnauthorizedException("Incorrect email or password")
         }
         const payload = { sub: user.id, username: user.username };
         this.saveSession(req, user)
@@ -90,6 +90,7 @@ export class AuthService {
         })
     }
     async saveSession(req: Request, user: User) {
+        
         return new Promise((resolve, reject) => {
             req.session.userId = user.id
 

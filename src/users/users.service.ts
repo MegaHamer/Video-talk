@@ -31,6 +31,7 @@ export class UsersService {
 				'The user was not found. Please check the entered data.'
 			)
 		}
+        return user
     }
 
     async create(
