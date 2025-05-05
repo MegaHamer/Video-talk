@@ -231,18 +231,18 @@ export class ChatService {
                     {
                         OR: [
                             {
-                                sentFriendships: {
+                                sentRelationship: {
                                     some: {
                                         recipientId: user.id,
-                                        status: 'ACCEPTED'
+                                        type: 'FRIEND'
                                     }
                                 }
                             },
                             {
-                                receivedFriendships: {
+                                receivedRelationship: {
                                     some: {
                                         requesterId: user.id,
-                                        status: 'ACCEPTED'
+                                        type: 'FRIEND'
                                     }
                                 }
                             },
@@ -421,18 +421,18 @@ export class ChatService {
                     {
                         OR: [
                             {
-                                sentFriendships: {
+                                sentRelationship: {
                                     some: {
                                         recipientId: user.id,
-                                        status: 'ACCEPTED'
+                                        type: 'FRIEND'
                                     }
                                 }
                             },
                             {
-                                receivedFriendships: {
+                                receivedRelationship: {
                                     some: {
                                         requesterId: user.id,
-                                        status: 'ACCEPTED'
+                                        type: 'FRIEND'
                                     }
                                 }
                             },

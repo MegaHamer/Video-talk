@@ -20,39 +20,31 @@ model User {
   avatar_url    String
   status        UserStatus
 
-  sentFriendships     Friendship[] @relation("RequesterFriendship")
-  receivedFriendships Friendship[] @relation("RecipientFriendship")
+  sentRelationship     Relationship[] @relation("RequesterRelationship")
+  receivedRelationship Relationship[] @relation("RecipientRelationship")
 
   messages   Message[]    @relation("SenderMessage")
   ChatMember ChatMember[] @relation("ChatMemberUser")
-
-  // Sessions Session[] @relation("UserSession")
 }
 
-// model Session {
-//   id        String   @id @default(uuid())
-//   user      User     @relation("UserSession",fields: [userId], references: [id])
-//   userId    Int
-//   token     String   @unique
-//   expiresAt DateTime
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-
-//   @@index([userId])
-// }
-
 //Отношения
-model Friendship {
+enum RelationType {
+  REQUEST
+  FRIEND
+  BLOCK
+}
+
+model Relationship {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  requester   User @relation("RequesterFriendship", fields: [requesterId], references: [id])
+  requester   User @relation("RequesterRelationship", fields: [requesterId], references: [id])
   requesterId Int
-  recipient   User @relation("RecipientFriendship", fields: [recipientId], references: [id])
+  recipient   User @relation("RecipientRelationship", fields: [recipientId], references: [id])
   recipientId Int
 
-  status FriendshipStatus
+  type RelationType
 
   @@unique([requesterId, recipientId])
 }
@@ -79,7 +71,7 @@ model ChatMember {
   userId Int
 
   visibleChat Boolean
-  role ChatRole @default(MEMBER)
+  role        ChatRole @default(MEMBER)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -96,7 +88,7 @@ model Message {
   content  String
   sender   User   @relation("SenderMessage", fields: [senderId], references: [id])
   senderId Int
-  chat     Chat   @relation("MessageChat", fields: [chatId], references: [id],onDelete: Cascade)
+  chat     Chat   @relation("MessageChat", fields: [chatId], references: [id], onDelete: Cascade)
   chatId   Int
 
   reply     Message? @relation("ReplyMessage", fields: [replyToId], references: [id])
@@ -111,12 +103,6 @@ enum ChatType {
   SERVER
   PRIVATE
   GROUP
-}
-
-enum FriendshipStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
 }
 
 enum ServerRole {

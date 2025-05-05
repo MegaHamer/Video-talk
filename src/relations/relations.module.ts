@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { FriendsService } from './friends.service';
-import { FriendsController } from './friends.controller';
 import { MulterModule } from '@nestjs/platform-express';
 import { PrismaService } from 'src/prisma.service';
 import { UsersModule } from 'src/users/users.module';
+import { RelationsService } from './relations.service';
+import { RelationsController } from './relations.controller';
 
 @Module({
   imports: [
@@ -12,10 +12,7 @@ import { UsersModule } from 'src/users/users.module';
     }),
     UsersModule,
   ],
-  controllers: [FriendsController],
-  providers: [
-    FriendsService,
-    PrismaService,
-  ],
+  controllers: [RelationsController],
+  providers: [RelationsService, PrismaService],
 })
-export class FriendsModule { }
+export class RelationsModule {}
