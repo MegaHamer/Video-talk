@@ -20,7 +20,7 @@ import { User } from 'prisma/src/generated/prisma/client';
 import { RelationsService } from './relations.service';
 import { RequestTypeDto } from './dto/requestType.dto';
 import { UsernameDto } from './dto/username.dto';
-import { FriendRequestDto } from './dto/friend-id.dto';
+import { UserRequestDto } from './dto/friend-id.dto';
 
 @Controller('relationship')
 export class RelationsController {
@@ -46,7 +46,7 @@ export class RelationsController {
   @Delete(':userId')
   async deleteRelation(
     @CurrentUser() user: User,
-    @Param() reciever: FriendRequestDto,
+    @Param() reciever: UserRequestDto,
   ) {
     return await this.relationsService.deleteRelation(user.id, reciever.userId);
   }
@@ -55,12 +55,12 @@ export class RelationsController {
   @Put(':userId')
   async createRelation(
     @CurrentUser() user: User,
-    @Param('userId') recieverId,
+    @Param() recieverId:UserRequestDto,
     @Body() body: RequestTypeDto,
   ) {
     return await this.relationsService.changeRelation(
       user.id,
-      recieverId,
+      recieverId.userId,
       body.type == 'block' ? 'block' : 'send/accept',
     );
   }
@@ -73,45 +73,4 @@ export class RelationsController {
       reciever.username,
     );
   }
-
-  // @HttpCode(HttpStatus.CREATED)
-  // @UsePipes(new ValidationPipe())
-  // @UseInterceptors(NoFilesInterceptor())
-  // @Post('sendrequest')
-  // sendFriendshipRequest(
-  //   @Body() FriendRequestDto: UserFriendDto,
-  //   @CurrentUser() user: User,
-  // ) {
-  //   return this.friendsService.sendRequest(user, FriendRequestDto);
-  // }
-
-  // @Get()
-  // getListOfFriends(@Request() req, @CurrentUser() user: User) {
-  //   return this.friendsService.listOfFriends(user);
-  // }
-  // @Get('requests')
-  // getListOfFriendshipRequests(@Request() req, @CurrentUser() user: User) {
-  //   return this.friendsService.listOfRequests(user);
-  // }
-
-  // @HttpCode(HttpStatus.NO_CONTENT)
-  // // @UsePipes(new ValidationPipe({ transform: true }))
-  // @UseInterceptors(NoFilesInterceptor())
-  // @Post('accept')
-  // acceptFriendRequest(
-  //   @Body() acceptDto: FriendRequestDto,
-  //   @CurrentUser() user: User,
-  // ) {
-  //   return this.friendsService.acceptRequest(user, acceptDto);
-  // }
-
-  // @HttpCode(HttpStatus.NO_CONTENT)
-  // @UseInterceptors(NoFilesInterceptor())
-  // @Post('deny')
-  // async denyFriendRequest(
-  //   @Body() denyDto: FriendRequestDto,
-  //   @CurrentUser() user: User,
-  // ) {
-  //   return await this.friendsService.denyRequest(user, denyDto);
-  // }
 }

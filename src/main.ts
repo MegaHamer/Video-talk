@@ -43,7 +43,7 @@ async function bootstrap() {
     },
     store: new PgStore({
       conString: config.getOrThrow<string>("POSTGRES_URI"),
-      tableName:'Session',
+      tableName:'session',
       createTableIfMissing:true,
     })
   }))

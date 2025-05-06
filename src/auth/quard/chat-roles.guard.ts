@@ -17,24 +17,24 @@ export class RolesGuard implements CanActivate {
             context.getHandler(),
             context.getClass()
         ])
-        if (!roles) return true
+        // if (!roles) return true
 
-        const request = context.switchToHttp().getRequest()
-        const user = request.currentUser as User
-        const chatId = Number(request.params.chatId);
+        // const request = context.switchToHttp().getRequest()
+        // const user = request.currentUser as User
+        // const chatId = Number(request.params.chatId);
 
-        const chatMember = await this.prisma.chatMember.findUnique({
-            where: { chatId_userId: { chatId, userId: user.id } },
-            select: { role: true, chat: { select: { type: true } } }
-        })
-        if (!chatMember) throw new NotFoundException("Chat not found")
-        if (chatMember.chat.type != "GROUP") throw new BadRequestException("Chat is not group")
+        // const chatMember = await this.prisma.chatMember.findUnique({
+        //     where: { chatId_userId: { chatId, userId: user.id } },
+        //     select: { role: true, chat: { select: { type: true } } }
+        // })
+        // if (!chatMember) throw new NotFoundException("Chat not found")
+        // if (chatMember.chat.type != "GROUP") throw new BadRequestException("Chat is not group")
 
-        if (!roles.includes(chatMember.role)) {
-            throw new ForbiddenException(
-                "Not enough rights. You don't have access rights to this resource."
-            )
-        }
+        // if (!roles.includes(chatMember.role)) {
+        //     throw new ForbiddenException(
+        //         "Not enough rights. You don't have access rights to this resource."
+        //     )
+        // }
 
         return true
     }

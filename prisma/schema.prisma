@@ -25,6 +25,7 @@ model User {
 
   messages   Message[]    @relation("SenderMessage")
   ChatMember ChatMember[] @relation("ChatMemberUser")
+  ownedChats Chat[] @relation("OwnerChat")
 }
 
 //Отношения
@@ -56,9 +57,13 @@ model Chat {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  icon     String?
   group_id Int?
   type     ChatType
-  name     String
+  name     String?
+
+  owner   User? @relation("OwnerChat", fields: [ownerId], references: [id])
+  ownerId Int?
 
   messages Message[]    @relation("MessageChat")
   members  ChatMember[] @relation("ChatMemberChat")
@@ -70,8 +75,8 @@ model ChatMember {
   user   User @relation("ChatMemberUser", fields: [userId], references: [id])
   userId Int
 
-  visibleChat Boolean
-  role        ChatRole @default(MEMBER)
+  leftAt   DateTime?
+  isActive Boolean
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -95,6 +100,16 @@ model Message {
   replyToId Int?
 
   ReferencingMessages Message[] @relation("ReplyMessage")
+}
+
+//сессии
+
+model Session {
+  sid    String   @id @db.VarChar(255)
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
+
+  @@map("session")
 }
 
 //Серверы
