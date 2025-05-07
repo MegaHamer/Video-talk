@@ -41,6 +41,9 @@ import { ChatResponseDto } from 'src/entities/chat.entity';
 import { ChatRoles } from 'src/auth/decorators/chatRoles.decorator';
 import { ChatDTO } from './dto/chat.dto';
 import { RecipientsDTO } from './dto/recipients.dto';
+import { ApiConsumes, ApiParam } from '@nestjs/swagger';
+import { multerOptions } from './config/multer.config';
+import { UpdateChatDto } from './dto/update.dto';
 
 @Controller('chats')
 export class ChatController {
@@ -54,19 +57,34 @@ export class ChatController {
 
   @HttpCode(HttpStatus.OK)
   @Post('')
-  async createChat(@CurrentUser() user: User,@Body() {recipients}:RecipientsDTO) {
+  async createChat(
+    @CurrentUser() user: User,
+    @Body() { recipients }: RecipientsDTO,
+  ) {
     return await this.chatService.createChat(user.id, recipients);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT) //ok
   @Delete(':chatId')
+  @ApiParam({ name: 'chatId' })
   async leaveChat(@CurrentUser() user: User, @Param() { chatId }: ChatDTO) {
     return await this.chatService.leaveChat(user.id, chatId);
   }
 
   @HttpCode(HttpStatus.OK)
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'chatId' })
   @Patch(':chatId')
-  async changeChat() {}
+  @UseInterceptors(FileInterceptor('icon', multerOptions))
+  async updateChat(
+    @CurrentUser() user: User,
+    @Body() dto: UpdateChatDto,
+    @Param() { chatId }: ChatDTO,
+    @UploadedFile() iconFile?: Express.Multer.File,
+  ) {
+    dto.icon = iconFile !== undefined ? iconFile : dto.icon;
+    return this.chatService.updateChat(user.id, chatId, dto);
+  }
 
   @HttpCode(HttpStatus.OK)
   @Put(':chatId/recipients/:userId')

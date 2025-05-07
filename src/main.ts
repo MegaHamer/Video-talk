@@ -9,9 +9,21 @@ import * as session from 'express-session';
 import * as pgSession from 'connect-pg-simple';
 import { ms, StringValue } from './libs/common/utils/ms.util';
 import { parseBoolean } from './libs/common/utils/parse-boolean.util';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  const configSwagger = new DocumentBuilder()
+    .setTitle('Video-talk')
+    .setDescription('The video-talk API description')
+    .setVersion('1.0')
+    .addTag('video-talk')
+    .build();
+  const documentFactory = () => SwaggerModule.createDocument(app, configSwagger);
+  SwaggerModule.setup('api', app, documentFactory);
 
   const config = app.get(ConfigService)
 
@@ -53,6 +65,10 @@ async function bootstrap() {
     credentials: true,
     exposedHeaders: ['set-cookie']
   })
+
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
 
   await app.listen(config.getOrThrow<number>("APPLICATION_PORT"));
 }

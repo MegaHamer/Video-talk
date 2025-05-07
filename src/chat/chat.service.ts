@@ -14,6 +14,9 @@ import {
 } from './chat.dto';
 import { PrismaService } from 'src/prisma.service';
 import { UsersService } from 'src/users/users.service';
+import { UpdateChatDto } from './dto/update.dto';
+import { existsSync, unlinkSync } from 'fs';
+import { join } from 'path';
 
 @Injectable()
 export class ChatService {
@@ -45,13 +48,12 @@ export class ChatService {
                 username: true,
               },
             },
+            isActive: true,
           },
         },
       },
     });
     const formattedChats = chats.map((chat) => {
-      let displayName = chat.name;
-
       const standartProps = {
         id: chat.id,
         type: chat.type,
@@ -75,7 +77,11 @@ export class ChatService {
           name: chat.name,
         };
       }
-      return { ...standartProps };
+      return {
+        ...standartProps,
+        hidden: !chat.members.find((member) => member.user.id == userId)
+          ?.isActive,
+      };
     });
     return formattedChats;
   }
@@ -149,6 +155,35 @@ export class ChatService {
         'You are not a member of this chat',
       );
     }
+    const isPrivate = chatMember.chat.type == 'PRIVATE';
+    if (isPrivate) {
+      await this.prisma.chatMember.update({
+        where: { chatId_userId: { chatId, userId } },
+        data: { isActive: false },
+      });
+      return;
+    }
+
+    await this.prisma.chatMember.delete({
+      where: { chatId_userId: { chatId, userId } },
+    });
+    const remainingMembers = await this.prisma.chatMember.count({
+      where: { chatId },
+    });
+    if (remainingMembers === 0) {
+      await this.prisma.chat.delete({
+        where: { id: chatId },
+      });
+      if (chatMember.chat.icon) {
+        this.deleteIconFile(chatMember.chat.icon);
+      }
+    }
+
+    await this.prisma.chat.delete({
+      where: { id: chatId, members: { some: {} } },
+    });
+
+    return;
   }
 
   async createChat(userId: number, recipientsIds: number[]) {
@@ -161,11 +196,52 @@ export class ChatService {
 
     const isPrivate = recipientsIds.filter((id) => id != userId).length == 1;
     const memberIds = [userId, ...recipientsIds];
+    //121
+    if (isPrivate) {
+      const existedChat = await this.prisma.chat.findFirst({
+        where: {
+          type: 'PRIVATE',
+          members: {
+            every: {
+              userId: { in: memberIds },
+            },
+          },
+        },
+        include: {
+          members: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+      if (existedChat) {
+        await this.prisma.chatMember.update({
+          where: { chatId_userId: { chatId: existedChat.id, userId: userId } },
+          data: { isActive: true },
+        });
+        return {
+          id: existedChat.id,
+          type: existedChat.type,
+          // last_message_id: ,
+          recipients: existedChat.members
+            .filter((member) => member.user.id != userId)
+            .map((member) => {
+              const { id, username, avatar_url } = member.user;
+              return {
+                id,
+                username,
+                avatar_url,
+              };
+            }),
+        };
+      }
+    }
 
     const chat = await this.prisma.chat.create({
       data: {
         type: isPrivate ? 'PRIVATE' : 'GROUP',
-        ownerId: isPrivate? null :userId,
+        ownerId: isPrivate ? null : userId,
         members: {
           createMany: {
             data: memberIds.map((id) => ({
@@ -209,6 +285,77 @@ export class ChatService {
       };
     }
     return formattedChat;
+  }
+
+  async updateChat(userId: number, chatId: number, UpdateDto: UpdateChatDto) {
+    const membership = await this.prisma.chatMember.findUnique({
+      where: {
+        chatId_userId: {
+          chatId,
+          userId,
+        },
+      },
+    });
+
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this chat');
+    }
+
+    const chat = await this.prisma.chat.findUnique({
+      where: { id: chatId },
+      include: { members: true },
+    });
+    if (!chat) {
+      throw new NotFoundException('Chat not found');
+    }
+    if (chat.type == 'PRIVATE') {
+      throw new BadRequestException('This chat cannot be updated');
+    }
+    if (chat.ownerId != userId) {
+      throw new ForbiddenException('You are not the owner of this chat');
+    }
+    if (
+      UpdateDto.owner &&
+      !chat.members.some((m) => m.userId === UpdateDto.owner)
+    ) {
+      throw new ForbiddenException('New owner must be a chat member');
+    }
+
+    let iconPath = chat.icon;
+    
+    if (UpdateDto.icon !== undefined) {
+      // Удаляем старую иконку, если она есть
+      if (chat.icon) {
+        iconPath = null
+        this.deleteIconFile(chat.icon);
+      }
+      if (UpdateDto.icon) {
+        iconPath = this.getIconPath(UpdateDto.icon);
+      }
+    }
+    
+    return await this.prisma.chat.update({
+      where: { id: chatId },
+      data: {
+        name: !!UpdateDto.name ? UpdateDto.name : null,
+        icon: iconPath ?? null,
+        ownerId: UpdateDto.owner ?? undefined,
+        updatedAt: new Date(),
+      },
+      include: {
+        members: true,
+      },
+    });
+  }
+  private getIconPath(file: Express.Multer.File): string {
+    return `/uploads/chat-icons/${file.filename}`;
+  }
+
+  private deleteIconFile(path: string): void {
+    const fullPath = join(process.cwd(), path);
+    if (existsSync(fullPath)) {
+      unlinkSync(fullPath);
+    }
   }
 
   //   async hideChat(user: User, chatDTO: ParamsChatDTO) {
