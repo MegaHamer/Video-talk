@@ -322,18 +322,18 @@ export class ChatService {
     }
 
     let iconPath = chat.icon;
-    
+
     if (UpdateDto.icon !== undefined) {
       // Удаляем старую иконку, если она есть
       if (chat.icon) {
-        iconPath = null
+        iconPath = null;
         this.deleteIconFile(chat.icon);
       }
       if (UpdateDto.icon) {
         iconPath = this.getIconPath(UpdateDto.icon);
       }
     }
-    
+
     return await this.prisma.chat.update({
       where: { id: chatId },
       data: {
@@ -358,6 +358,11 @@ export class ChatService {
     }
   }
 
+  async fetchChat(chatId) {
+    return await this.prisma.chat.findUnique({
+      where: { id: chatId },
+    });
+  }
   //   async hideChat(user: User, chatDTO: ParamsChatDTO) {
   //     const { chatId } = chatDTO;
   //     const { id: userId } = user;

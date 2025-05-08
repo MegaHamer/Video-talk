@@ -9,6 +9,7 @@ import { IS_DEV_ENV } from './libs/common/utils/is-dev.util';
 import { AuthGuard } from './auth/quard/auth.guard';
 import { RolesGuard } from './auth/quard/chat-roles.guard';
 import { RelationsModule } from './relations/relations.module';
+import { MediasoupModule } from './mediasoup/mediasoup.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { RelationsModule } from './relations/relations.module';
     ConfigModule.forRoot({
       ignoreEnvFile: !IS_DEV_ENV,
       isGlobal:true
-    })
+    }),
+    MediasoupModule
   ],
 
   providers: [

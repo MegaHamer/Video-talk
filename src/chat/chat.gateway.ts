@@ -14,6 +14,8 @@ import { SocketSessionMiddleware } from './middleware/socket.middleware';
     origin: true,
     credentials: true,
   },
+  namespace:"/chat",
+  transports:["websocket"]
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
@@ -69,9 +71,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('message')
-  handleMessage(client: any, payload: any): string {
-    return 'Hello world!';
+  handleMessage(client: Socket, data: string) {
+    console.log('Received:', data); 
+    this.server.emit('message', data); 
   }
+
+  @SubscribeMessage('start_call')
+  handleStartCall(client: any, payload: any): string {
+    return 'start_call!';
+  }
+
   /**
    * Добавляем соединение пользователя
    */

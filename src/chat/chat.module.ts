@@ -18,5 +18,6 @@ import { SocketSessionMiddleware } from './middleware/socket.middleware';
   ],
   controllers: [ChatController],
   providers: [PrismaService, ChatService, ChatGateway, SocketSessionMiddleware],
+  exports:[ChatService]
 })
 export class ChatModule {}
