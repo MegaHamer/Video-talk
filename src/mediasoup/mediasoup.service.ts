@@ -4,50 +4,25 @@ import { MediasoupModule } from './mediasoup.module';
 import { mediaCodecs } from './config/routerOptions';
 import { MediasoupWorkerProvider } from './mediasoup-worker.provider';
 import { ChatService } from 'src/chat/chat.service';
+import { Room } from './models/room.model';
 
 @Injectable()
 export class MediasoupService {
-  private routers = new Map<string, mediasoup.types.Router>();
+  private rooms: Map<string, Room> = new Map();
 
-  constructor(
-    private MSWorkerProvider: MediasoupWorkerProvider,
-    
-  ) {}
+  constructor(private MSWorkerProvider: MediasoupWorkerProvider) {}
 
-  async createRouter() {
+ 
+
+  async getOrCreateRoom(roomId: string) {
+    const room = this.rooms.get(roomId);
+    if (room) {
+      return room;
+    }
     const worker = this.MSWorkerProvider.getWoker();
-    const router = await worker.createRouter({ mediaCodecs: mediaCodecs });
-
-    const routerId = router.id;
-    this.routers.set(routerId, router);
-
-    return router;
+    const newRoom = await Room.create({ roomId, mediasoupWorker: worker });
+    this.rooms.set(roomId, newRoom);
+    return newRoom;
   }
 
-  async createWebRtcTransport(routerId: string) {
-    const router = this.routers.get(routerId);
-    if (!router) throw new Error('Router not found');
-
-    const transport = await router.createWebRtcTransport({
-      listenIps: [
-        {
-          ip: '127.0.0.1',
-          // announcedIp: null
-        },
-      ],
-      enableUdp: true,
-      enableTcp: true,
-      preferUdp: true,
-    });
-
-    return {
-      transport,
-      params: {
-        id: transport.id,
-        iceParameters: transport.iceParameters,
-        iceCandidates: transport.iceCandidates,
-        dtlsParameters: transport.dtlsParameters,
-      },
-    };
-  }
 }
