@@ -176,6 +176,7 @@ export class Room {
       if (kind == 'audio') member.data.producers.display.audio = producer;
       if (kind == 'video') member.data.producers.display.video = producer;
     }
+    console.log(type)
 
     console.log(
       `132 create producer ${producer.id} of user ${member.id} of transport ${transport.id}`,
@@ -226,7 +227,7 @@ export class Room {
 
     consumer.on('transportclose', () => {
       // Remove from its map.
-      member.data.socket.emit('consumer-close', { consumerId: consumer.id });
+      member.data.socket.emit('consumer-close', {consumerId: consumer.id, kinf:consumer.kind });
       consumer.close();
       member.data.consumers.delete(consumer.id);
     });
@@ -234,7 +235,7 @@ export class Room {
     consumer.on('producerclose', () => {
       // Remove from its map.
       console.log('213 producer od consumer closed', consumer.id);
-      member.data.socket.emit('consumer-close', { consumerId: consumer.id });
+      member.data.socket.emit('consumer-close', { consumerId: consumer.id, kinf:consumer.kind });
       consumer.close();
       member.data.consumers.delete(consumer.id);
     });

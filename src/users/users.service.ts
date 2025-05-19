@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import * as argon2 from 'argon2';
@@ -69,5 +73,16 @@ export class UsersService {
     });
 
     return user;
+  }
+
+  async getProfile(userId: number) {
+    const user = await this.findById(userId);
+
+    return {
+      id: user.id,
+      username: user.username,
+      avatar: user.avatar_url,
+      status:user.status
+    };
   }
 }

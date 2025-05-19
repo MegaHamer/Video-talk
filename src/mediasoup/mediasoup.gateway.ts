@@ -81,7 +81,7 @@ export class MediasoupGateway
             rtpCapabilities,
             client,
           );
-          const membersInfo = room.getMembersInfo(member.id);
+          
           client.emit('member-created');
           client.broadcast
             .to(`chat ${chat.id}`)
@@ -160,13 +160,14 @@ export class MediasoupGateway
       rtpParameters,
       type,
     );
-
+    console.log("transport-produce",chatId)
     client.broadcast.to(`chat ${chatId}`).emit('new-producer', {
       id: userId,
       producer: {
         id: producer.id,
         // kind: producer.kind,
         type: type,
+        kind: producer.kind,
       },
     });
 
@@ -224,12 +225,28 @@ export class MediasoupGateway
     return room.getInfo();
   }
   @SubscribeMessage('producer_closed')
-  async handleProducerClosed(client: Socket, {producerId}: any) {
+  async handleProducerClosed(client: Socket, { producerId }: any) {
     const chatId: string = String(client.data.chatId);
     const userId: string = String(client.data.userId);
     const room = await this.mediasoupService.getOrCreateRoom(String(chatId));
-    room.deleteMemberProducer(userId,String(producerId))
+    room.deleteMemberProducer(userId, String(producerId));
 
     // return room.getInfo();
+  }
+  @SubscribeMessage('user_muted')
+  async handleUserMuted(client: Socket, { producerId }: any) {
+    const chatId: string = String(client.data.chatId);
+    const userId: string = String(client.data.userId);
+    client.broadcast.to(`chat ${chatId}`).emit('user-muted', {
+      id: userId,
+    });
+  }
+  @SubscribeMessage('user_unmuted')
+  async handleUserUnmuted(client: Socket, { producerId }: any) {
+    const chatId: string = String(client.data.chatId);
+    const userId: string = String(client.data.userId);
+    client.broadcast.to(`chat ${chatId}`).emit('user-unmuted', {
+      id: userId,
+    });
   }
 }

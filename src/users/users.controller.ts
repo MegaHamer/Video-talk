@@ -17,6 +17,7 @@ import { User } from 'prisma/src/generated/prisma/client';
 import { UsernameDto } from 'src/relations/dto/username.dto';
 import { RelationsService } from 'src/relations/relations.service';
 import { RequestTypeDto } from 'src/relations/dto/requestType.dto';
+import { UserProfileDto } from './dto/profile.dto';
 
 @Controller('users')
 export class UsersController {
@@ -26,6 +27,16 @@ export class UsersController {
   ) {}
 
   @Get(':userId/profile')
-  async getProfile(@CurrentUser() user: User, @Param() reciever) {}
-  
+  async getProfile(
+    @CurrentUser() user: User,
+    @Param() reciever: UserProfileDto,
+  ) {
+    return await this.usersService.getProfile(reciever.userId);
+  }
+  @Get('profile')
+  async getMyProfile(
+    @CurrentUser() user: User,
+  ) {
+    return await this.usersService.getProfile(user.id);
+  }
 }
