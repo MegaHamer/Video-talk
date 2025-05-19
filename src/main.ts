@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { PrismaExceptionsFilter } from './prisma-exception.filter';
-import { ValidationPipe } from '@nestjs/common';
+import { HttpStatus, ValidationPipe } from '@nestjs/common';
 
 import * as cookieParser from 'cookie-parser'
 import { ConfigService } from '@nestjs/config';
@@ -36,6 +36,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
+      errorHttpStatusCode:HttpStatus.UNPROCESSABLE_ENTITY
     })
   );
 
