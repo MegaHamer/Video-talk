@@ -3,7 +3,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import * as argon2 from 'argon2';
 
