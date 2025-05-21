@@ -8,6 +8,7 @@ import {
   MaxFileSizeValidator,
   ParseFilePipe,
   ParseFilePipeBuilder,
+  Patch,
   Post,
   Req,
   Res,
@@ -25,6 +26,8 @@ import { CurrentUser } from 'src/auth/decorators/currentUser.decorator';
 import { RegisterDto } from './dto/register.dto';
 import { Request, Response } from 'express';
 import { LoginUserDto } from './dto/login.dto';
+import { ApiConsumes } from '@nestjs/swagger';
+import { multerOptions } from './config/multer.config';
 
 @Controller('auth')
 export class AuthController {
@@ -57,27 +60,30 @@ export class AuthController {
 
   @NoAuth()
   @HttpCode(HttpStatus.CREATED)
+  @ApiConsumes('multipart/form-data')
   @UsePipes(new ValidationPipe())
-  @UseInterceptors(FileInterceptor('avatar')) //form-data with file
+  @UseInterceptors(FileInterceptor('avatar', multerOptions)) //form-data with file
   @Post('register')
   register(
-    @UploadedFile(
-      new ParseFilePipeBuilder()
-        .addFileTypeValidator({
-          fileType: /(jpg|jpeg|png|webp)$/,
-        })
-        .addMaxSizeValidator({
-          maxSize: 1000,
-        })
-        .build({
-          fileIsRequired: false,
-          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-        }),
-    )
-    avatar: Express.Multer.File,
     @Req() req: Request,
     @Body() dto: RegisterDto,
+    @UploadedFile() avatarFile?: Express.Multer.File,
   ) {
+    dto.avatar = avatarFile !== undefined ? avatarFile : dto.avatar;
     return this.authService.register(req, dto);
   }
+
+  // @HttpCode(HttpStatus.OK)
+  //   @ApiConsumes('multipart/form-data')
+  //   @Patch('')
+  //   @UseInterceptors(FileInterceptor('icon', multerOptions))
+  //   async updateChat(
+  //     @CurrentUser() user: User,
+  //     @Body() dto: UpdateUserDto,
+  //     @Param() { chatId }: ChatDTO,
+  //     @UploadedFile() iconFile?: Express.Multer.File,
+  //   ) {
+  //     dto.icon = iconFile !== undefined ? iconFile : dto.icon;
+  //     return this.chatService.updateChat(user.id, chatId, dto);
+  //   }
 }

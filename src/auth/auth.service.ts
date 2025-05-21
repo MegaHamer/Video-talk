@@ -14,6 +14,8 @@ import { Request, Response } from 'express';
 import { LoginUserDto } from './dto/login.dto';
 import { ConfigService } from '@nestjs/config';
 import session from 'express-session';
+import { join } from 'path';
+import { existsSync, unlinkSync } from 'fs';
 
 @Injectable()
 export class AuthService {
@@ -39,27 +41,44 @@ export class AuthService {
   }
 
   async register(req: Request, dto: RegisterDto) {
-    const { email, password, username } = dto;
+    const { email, password, username, avatar } = dto;
     const existingUser = await this.userService.findByEmail(email);
 
     if (existingUser) {
       throw new ConflictException('The user with this email already exists');
     }
 
+    let avatarPath = ""
+    if (avatar){
+      avatarPath = this.getIconPath(avatar)
+    }
+
     const newUser = await this.userService.create(
       email,
       password,
       username,
-      '',
+      avatarPath,
     );
 
-    // Генерация JWT-токена
-    const payload = { sub: newUser.id, username: newUser.username };
-    const accessToken = this.jwtService.sign(payload);
-
+    //генерация сессии
     this.saveSession(req, newUser);
+    
+    // Генерация JWT-токена
+    // const payload = { sub: newUser.id, username: newUser.username };
+    // const accessToken = this.jwtService.sign(payload);
 
-    return { accessToken };
+    // return { accessToken };
+  }
+
+  private getIconPath(file: Express.Multer.File): string {
+    return `/uploads/user-avatar/${file.filename}`;
+  }
+
+  private deleteIconFile(path: string): void {
+    const fullPath = join(process.cwd(), path);
+    if (existsSync(fullPath)) {
+      unlinkSync(fullPath);
+    }
   }
 
   async getProfile(user: User) {
