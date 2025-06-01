@@ -14,18 +14,19 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  globalName    String     
   username      String     @unique
   email         String     @unique
   password_hash String
   avatar_url    String
   status        UserStatus
 
-  sentRelationship     Relationship[] @relation("RequesterRelationship")
-  receivedRelationship Relationship[] @relation("RecipientRelationship")
+  // sentRelationship     Relationship[] @relation("RequesterRelationship")
+  // receivedRelationship Relationship[] @relation("RecipientRelationship")
 
   messages   Message[]    @relation("SenderMessage")
-  ChatMember ChatMember[] @relation("ChatMemberUser")
-  ownedChats Chat[] @relation("OwnerChat")
+  // ChatMember ChatMember[] @relation("ChatMemberUser")
+  ownedChats Chat[]       @relation("OwnerChat")
 }
 
 //Отношения
@@ -35,54 +36,53 @@ enum RelationType {
   BLOCK
 }
 
-model Relationship {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// model Relationship {
+//   id        Int      @id @default(autoincrement())
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
 
-  requester   User @relation("RequesterRelationship", fields: [requesterId], references: [id])
-  requesterId Int
-  recipient   User @relation("RecipientRelationship", fields: [recipientId], references: [id])
-  recipientId Int
+//   requester   User @relation("RequesterRelationship", fields: [requesterId], references: [id])
+//   requesterId Int
+//   recipient   User @relation("RecipientRelationship", fields: [recipientId], references: [id])
+//   recipientId Int
 
-  type RelationType
+//   type RelationType
 
-  @@unique([requesterId, recipientId])
-}
+//   @@unique([requesterId, recipientId])
+// }
 
 //чаты
 
 model Chat {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  icon     String?
-  group_id Int?
-  type     ChatType
-  name     String?
+  name         String
+  passwordHash String?
+  ownerId      Int
+  owner        User    @relation("OwnerChat", fields: [ownerId], references: [id])
 
-  owner   User? @relation("OwnerChat", fields: [ownerId], references: [id])
-  ownerId Int?
+  maxParticipants Int @default(10)
 
   messages Message[]    @relation("MessageChat")
-  members  ChatMember[] @relation("ChatMemberChat")
+  // members  ChatMember[] @relation("ChatMemberChat")
 }
 
-model ChatMember {
-  chat   Chat @relation("ChatMemberChat", fields: [chatId], references: [id], onDelete: Cascade)
-  chatId Int
-  user   User @relation("ChatMemberUser", fields: [userId], references: [id])
-  userId Int
+// model ChatMember {
+//   chat   Chat @relation("ChatMemberChat", fields: [chatId], references: [id], onDelete: Cascade)
+//   chatId Int
+//   user   User @relation("ChatMemberUser", fields: [userId], references: [id])
+//   userId Int
 
-  leftAt   DateTime?
-  isActive Boolean
+//   leftAt   DateTime?
+//   isActive Boolean
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
 
-  @@id([chatId, userId])
-}
+//   @@id([chatId, userId])
+// }
 
 //Cообщения
 model Message {
@@ -94,7 +94,7 @@ model Message {
   sender   User   @relation("SenderMessage", fields: [senderId], references: [id])
   senderId Int
   chat     Chat   @relation("MessageChat", fields: [chatId], references: [id], onDelete: Cascade)
-  chatId   Int
+  chatId   String
 
   reply     Message? @relation("ReplyMessage", fields: [replyToId], references: [id])
   replyToId Int?

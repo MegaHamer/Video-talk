@@ -1,8 +1,10 @@
 import { Transform } from 'class-transformer';
-import { IsNumber } from 'class-validator';
+import { IsNumber, IsString } from 'class-validator';
 
 export class ChatDTO {
-  @IsNumber()
-  @Transform(({ value }) => parseInt(value, 10))
-  chatId: number;
+  @IsString()
+  chatId: string;
+  // @IsNumber()
+  // @Transform(({ value }) => parseInt(value, 10))
+  // chatId: number;
 }

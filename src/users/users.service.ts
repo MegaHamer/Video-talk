@@ -5,6 +5,9 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import * as argon2 from 'argon2';
+import { existsSync, unlinkSync } from 'fs';
+import { join } from 'path';
+import { UpdateUserDto } from './dto/update.dto';
 
 @Injectable()
 export class UsersService {
@@ -63,6 +66,7 @@ export class UsersService {
     // Создание пользователя
     const user = await this.prisma.user.create({
       data: {
+        globalName: username,
         email,
         username,
         password_hash: hashedPassword,
@@ -81,7 +85,44 @@ export class UsersService {
       id: user.id,
       username: user.username,
       avatar: user.avatar_url,
-      status:user.status
+      status: user.status,
+      globalName: user.globalName,
     };
+  }
+
+  async updateUser(userId: number, dto: UpdateUserDto) {
+    const user = await this.findById(userId);
+
+    const { globalName, avatar } = dto;
+
+    let avatarPath = user.avatar_url || null;
+    if (avatar !== undefined) {
+      if (user.avatar_url) {
+        avatarPath = null;
+        this.deleteIconFile(user.avatar_url);
+      }
+      if (avatar) {
+        avatarPath = this.getIconPath(avatar);
+      }
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        globalName: dto.globalName ?? user.globalName,
+        avatar_url: avatarPath ?? "",
+      },
+    });
+  }
+
+  private getIconPath(file: Express.Multer.File): string {
+    return `/uploads/user-avatar/${file.filename}`;
+  }
+
+  private deleteIconFile(path: string): void {
+    const fullPath = join(process.cwd(), path);
+    if (existsSync(fullPath)) {
+      unlinkSync(fullPath);
+    }
   }
 }

@@ -24,5 +24,12 @@ export class MediasoupService {
     this.rooms.set(roomId, newRoom);
     return newRoom;
   }
+  async deleteRoom(roomId: string){
+    const room = this.rooms.get(roomId);
+    if (!room) {
+      return true;
+    }
+    room.close()
+  }
 
 }

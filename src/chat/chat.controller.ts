@@ -49,11 +49,11 @@ import { UpdateChatDto } from './dto/update.dto';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
-  @HttpCode(HttpStatus.OK)
-  @Get('')
-  async getChats(@CurrentUser() user: User) {
-    return this.chatService.getAllChats(user.id);
-  }
+  // @HttpCode(HttpStatus.OK)
+  // @Get('')
+  // async getChats(@CurrentUser() user: User) {
+  //   // return this.chatService.getAllChats(user.id);
+  // }
 
   @HttpCode(HttpStatus.OK)
   @Post('')
@@ -61,42 +61,48 @@ export class ChatController {
     @CurrentUser() user: User,
     @Body() { recipients }: RecipientsDTO,
   ) {
-    return await this.chatService.createChat(user.id, recipients);
+    return await this.chatService.generate_room('', user.id);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT) //ok
   @Delete(':chatId')
   @ApiParam({ name: 'chatId' })
-  async leaveChat(@CurrentUser() user: User, @Param() { chatId }: ChatDTO) {
-    return await this.chatService.leaveChat(user.id, chatId);
+  async deleteChat(@CurrentUser() user: User, @Param() { chatId }: ChatDTO) {
+    // return await this.chatService.leaveChat(user.id, chatId);
   }
 
-  @HttpCode(HttpStatus.OK)
-  @ApiConsumes('multipart/form-data')
-  @ApiParam({ name: 'chatId' })
-  @Patch(':chatId')
-  @UseInterceptors(FileInterceptor('icon', multerOptions))
-  async updateChat(
-    @CurrentUser() user: User,
-    @Body() dto: UpdateChatDto,
-    @Param() { chatId }: ChatDTO,
-    @UploadedFile() iconFile?: Express.Multer.File,
-  ) {
-    dto.icon = iconFile !== undefined ? iconFile : dto.icon;
-    return this.chatService.updateChat(user.id, chatId, dto);
+  @Get('check-room/:chatId')
+  async checkRoom(@Param() { chatId }: ChatDTO) {
+    const exists = await this.chatService.fetchChat(chatId);
+    return { available: !!exists };
   }
 
-  @HttpCode(HttpStatus.OK)
-  @Put(':chatId/recipients/:userId')
-  async addRecipients() {}
+  // @HttpCode(HttpStatus.OK)
+  // @ApiConsumes('multipart/form-data')
+  // @ApiParam({ name: 'chatId' })
+  // @Patch(':chatId')
+  // @UseInterceptors(FileInterceptor('icon', multerOptions))
+  // async updateChat(
+  //   @CurrentUser() user: User,
+  //   @Body() dto: UpdateChatDto,
+  //   @Param() { chatId }: ChatDTO,
+  //   @UploadedFile() iconFile?: Express.Multer.File,
+  // ) {
+  //   dto.icon = iconFile !== undefined ? iconFile : dto.icon;
+  //   // return this.chatService.updateChat(user.id, chatId, dto);
+  // }
 
-  @HttpCode(HttpStatus.OK)
-  @Delete(':chatId/recipients/:userId')
-  async deleteRecipients() {}
+  // @HttpCode(HttpStatus.OK)
+  // @Put(':chatId/recipients/:userId')
+  // async addRecipients() {}
 
-  @HttpCode(HttpStatus.OK)
-  @Get(':chatId/recipients')
-  async getRecipients() {}
+  // @HttpCode(HttpStatus.OK)
+  // @Delete(':chatId/recipients/:userId')
+  // async deleteRecipients() {}
+
+  // @HttpCode(HttpStatus.OK)
+  // @Get(':chatId/recipients')
+  // async getRecipients() {}
 
   // @HttpCode(HttpStatus.OK)
   // @Get("all")

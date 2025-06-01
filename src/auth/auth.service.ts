@@ -48,9 +48,9 @@ export class AuthService {
       throw new ConflictException('The user with this email already exists');
     }
 
-    let avatarPath = ""
-    if (avatar){
-      avatarPath = this.getIconPath(avatar)
+    let avatarPath = '';
+    if (avatar) {
+      avatarPath = this.getIconPath(avatar);
     }
 
     const newUser = await this.userService.create(
@@ -62,7 +62,7 @@ export class AuthService {
 
     //генерация сессии
     this.saveSession(req, newUser);
-    
+
     // Генерация JWT-токена
     // const payload = { sub: newUser.id, username: newUser.username };
     // const accessToken = this.jwtService.sign(payload);
@@ -89,6 +89,7 @@ export class AuthService {
         email: true,
         avatar_url: true,
         status: true,
+        globalName: true,
       },
       where: {
         id: user.id,

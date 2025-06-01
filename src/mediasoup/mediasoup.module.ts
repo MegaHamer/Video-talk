@@ -1,4 +1,4 @@
-import { Module, OnModuleInit } from '@nestjs/common';
+import { forwardRef, Module, OnModuleInit } from '@nestjs/common';
 import { MediasoupService } from './mediasoup.service';
 import { MediasoupGateway } from './mediasoup.gateway';
 import { SocketSessionMiddleware } from 'src/chat/middleware/socket.middleware';
@@ -8,13 +8,13 @@ import { ChatService } from 'src/chat/chat.service';
 import { ChatModule } from 'src/chat/chat.module';
 
 @Module({
-  imports: [ConfigModule, ChatModule],
+  imports: [ConfigModule, forwardRef(() => ChatModule)],
   providers: [
     MediasoupService,
     MediasoupGateway,
     SocketSessionMiddleware,
     MediasoupWorkerProvider,
   ],
-  exports: [],
+  exports: [MediasoupService],
 })
 export class MediasoupModule {}

@@ -56,7 +56,7 @@ export class MediasoupGateway
       //проверка существования чата
       const { chat: chatId } = client.handshake.auth;
       if (!chatId) throw new Error('Chat is required');
-      const chat = await this.chatService.fetchChat(Number(chatId));
+      const chat = await this.chatService.fetchChat(chatId);
       if (!chat) throw new Error('Chat not found');
 
       //отключаем остальные устройства из с однаковым id
@@ -108,6 +108,7 @@ export class MediasoupGateway
         .to(`chat ${chatId}`)
         .emit('member-disconnect', { memberId: userId });
       room.deleteMember(userId);
+      
 
       console.log('soup user dissconnect', client.id);
     } catch (error) {

@@ -29,48 +29,48 @@ export class RelationsController {
     private readonly relationsService: RelationsService,
   ) {}
 
-  @Get('friends')
-  async getFriends(@CurrentUser() user: User) {
-    return await this.relationsService.getFriends(user.id);
-  }
-  @Get('requests')
-  async getRequests(@CurrentUser() user: User) {
-    return await this.relationsService.getRequests(user.id);
-  }
-  @Get('blocked')
-  async getBlocked(@CurrentUser() user: User) {
-    return await this.relationsService.getBlocked(user.id);
-  }
+  // @Get('friends')
+  // async getFriends(@CurrentUser() user: User) {
+  //   return await this.relationsService.getFriends(user.id);
+  // }
+  // @Get('requests')
+  // async getRequests(@CurrentUser() user: User) {
+  //   return await this.relationsService.getRequests(user.id);
+  // }
+  // @Get('blocked')
+  // async getBlocked(@CurrentUser() user: User) {
+  //   return await this.relationsService.getBlocked(user.id);
+  // }
 
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @Delete(':userId')
-  async deleteRelation(
-    @CurrentUser() user: User,
-    @Param() reciever: UserRequestDto,
-  ) {
-    return await this.relationsService.deleteRelation(user.id, reciever.userId);
-  }
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // @Delete(':userId')
+  // async deleteRelation(
+  //   @CurrentUser() user: User,
+  //   @Param() reciever: UserRequestDto,
+  // ) {
+  //   return await this.relationsService.deleteRelation(user.id, reciever.userId);
+  // }
 
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @Put(':userId')
-  async createRelation(
-    @CurrentUser() user: User,
-    @Param() recieverId:UserRequestDto,
-    @Body() body: RequestTypeDto,
-  ) {
-    return await this.relationsService.changeRelation(
-      user.id,
-      recieverId.userId,
-      body.type == 'block' ? 'block' : 'send/accept',
-    );
-  }
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // @Put(':userId')
+  // async createRelation(
+  //   @CurrentUser() user: User,
+  //   @Param() recieverId:UserRequestDto,
+  //   @Body() body: RequestTypeDto,
+  // ) {
+  //   return await this.relationsService.changeRelation(
+  //     user.id,
+  //     recieverId.userId,
+  //     body.type == 'block' ? 'block' : 'send/accept',
+  //   );
+  // }
 
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @Post('')
-  async sendRelation(@CurrentUser() user: User, @Body() reciever: UsernameDto) {
-    return await this.relationsService.createRelationByUsername(
-      user.id,
-      reciever.username,
-    );
-  }
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // @Post('')
+  // async sendRelation(@CurrentUser() user: User, @Body() reciever: UsernameDto) {
+  //   return await this.relationsService.createRelationByUsername(
+  //     user.id,
+  //     reciever.username,
+  //   );
+  // }
 }
