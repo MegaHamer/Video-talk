@@ -379,9 +379,138 @@ export class ChatService {
       data: {
         name,
         ownerId,
-        passwordHash:hashedPassword
+        passwordHash: hashedPassword,
       },
     });
+  }
+
+  async send_message(userId: number, chatId: string, massage_content: string) {
+    //checks
+
+    //chat exist check
+    const chat = await this.fetchChat(chatId);
+    if (!chat) {
+      throw new NotFoundException('Chat not found');
+    }
+    //user in chat exist
+
+    //create massage
+    return await this.prisma.message.create({
+      data: {
+        content: massage_content,
+        chatId: chat.id,
+        senderId: userId,
+      },
+    });
+  }
+
+  async get_messages(userId: number, chatId: string) {
+    //chat exist check
+    const chat = await this.fetchChat(chatId);
+    if (!chat) {
+      throw new NotFoundException('Chat not found');
+    }
+
+    const messages = await this.prisma.message.findMany({
+      where: { chatId: chatId },
+      select: {
+        id: true,
+        chatId: true,
+        content: true,
+        sender: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    return messages.map((message) => ({
+      messageId: message.id,
+      chatId: message.chatId,
+      user: {
+        id: message.sender.id,
+        globalName: message.sender.globalName,
+        username: message.sender.username,
+      },
+      createdAt: message.createdAt,
+      updatedAt: message.updatedAt,
+      content: message.content,
+    }));
+  }
+
+  async change_message(
+    userId: number,
+    chatId: string,
+    messageId: number,
+    message_content: string,
+  ) {
+    //chat exist check
+    const chat = await this.fetchChat(chatId);
+    if (!chat) {
+      throw new NotFoundException('Chat not found');
+    }
+    //message exist check
+    const existedMessage = await this.prisma.message.findUnique({
+      where: { id: messageId },
+    });
+    if (!existedMessage) {
+      throw new NotFoundException('Message not found');
+    }
+    if (existedMessage.senderId != userId) {
+      throw new ForbiddenException('You are not sender');
+    }
+
+    const message = await this.prisma.message.update({
+      where: {
+        id: existedMessage.id,
+      },
+      select: {
+        id: true,
+        chatId: true,
+        content: true,
+        sender: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      data: {
+        content: message_content,
+      },
+    });
+
+    return {
+      messageId: message.id,
+      chatId: message.chatId,
+      user: {
+        id: message.sender.id,
+        globalName: message.sender.globalName,
+        username: message.sender.username,
+      },
+      createdAt: message.createdAt,
+      updatedAt: message.updatedAt,
+      content: message.content,
+    };
+  }
+
+  async delete_message(userId: number, chatId: string, messageId: number) {
+    //chat exist check
+    const chat = await this.fetchChat(chatId);
+    if (!chat) {
+      throw new NotFoundException('Chat not found');
+    }
+    //message exist check
+    const existedMessage = await this.prisma.message.findUnique({
+      where: { id: messageId },
+    });
+    if (!existedMessage) {
+      throw new NotFoundException('Message not found');
+    }
+    if (existedMessage.senderId != userId) {
+      throw new ForbiddenException('You are not sender');
+    }
+
+    await this.prisma.message.delete({ where: { id: existedMessage.id } });
   }
 
   // ==========================================================================

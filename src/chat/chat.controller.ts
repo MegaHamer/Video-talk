@@ -34,7 +34,6 @@ import {
   CreatePrivateChatDto,
   ParamsChatDTO,
   ParamsDTO,
-  SendMessageDto,
 } from './chat.dto';
 import { classToPlain, plainToClass, plainToInstance } from 'class-transformer';
 import { ChatResponseDto } from 'src/entities/chat.entity';
@@ -44,6 +43,8 @@ import { RecipientsDTO } from './dto/recipients.dto';
 import { ApiConsumes, ApiParam } from '@nestjs/swagger';
 import { multerOptions } from './config/multer.config';
 import { UpdateChatDto } from './dto/update.dto';
+import { SendMessageDto } from './dto/send-message';
+import { MessageDTO } from './dto/message.dto';
 
 @Controller('chats')
 export class ChatController {
@@ -75,6 +76,53 @@ export class ChatController {
   async checkRoom(@Param() { chatId }: ChatDTO) {
     const exists = await this.chatService.fetchChat(chatId);
     return { available: !!exists };
+  }
+
+  @Get(':chatId/messages')
+  @ApiParam({ name: 'chatId' })
+  async getMessages(@CurrentUser() user: User, @Param() { chatId }: ChatDTO) {
+    return await this.chatService.get_messages(user.id, chatId);
+  }
+
+  @HttpCode(HttpStatus.CREATED)
+  @Post(':chatId/messages')
+  @UseInterceptors(NoFilesInterceptor())
+  @ApiParam({ name: 'chatId' })
+  @ApiConsumes('multipart/form-data')
+  async sendMessage(
+    @CurrentUser() user: User,
+    @Param() { chatId }: ChatDTO,
+    @Body() dto: SendMessageDto,
+  ) {
+    return await this.chatService.send_message(user.id, chatId, dto.content);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Put(':chatId/messages/:messageId')
+  @UseInterceptors(NoFilesInterceptor())
+  @ApiParam({ name: 'chatId' })
+  @ApiParam({ name: 'messageId' })
+  @ApiConsumes('multipart/form-data')
+  async ChangeMessage(
+    @CurrentUser() user: User,
+    @Param() { chatId, messageId }: MessageDTO,
+    @Body() dto: SendMessageDto,
+  ) {
+    return await this.chatService.change_message(
+      user.id,
+      chatId,
+      messageId,
+      dto.content,
+    );
+  }
+
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':chatId/messages/:messageId')
+  async DeleteMessage(
+    @CurrentUser() user: User,
+    @Param() { chatId, messageId }: MessageDTO,
+  ) {
+    return await this.chatService.delete_message(user.id, chatId, messageId);
   }
 
   // @HttpCode(HttpStatus.OK)
