@@ -88,7 +88,6 @@ export class AuthService {
         username: true,
         email: true,
         avatar_url: true,
-        status: true,
         globalName: true,
       },
       where: {

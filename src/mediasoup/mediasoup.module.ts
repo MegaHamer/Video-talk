@@ -15,6 +15,6 @@ import { ChatModule } from 'src/chat/chat.module';
     SocketSessionMiddleware,
     MediasoupWorkerProvider,
   ],
-  exports: [MediasoupService],
+  exports: [MediasoupService,MediasoupGateway],
 })
 export class MediasoupModule {}

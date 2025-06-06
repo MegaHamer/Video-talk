@@ -5,7 +5,7 @@ import { IsNotEmpty, IsString } from "class-validator";
 export class SendMessageDto {
   @ApiProperty({
     description: 'Сообщение',
-    required: true,
+    required: false,
     example: 'Тествоое сообщение',
 
   })

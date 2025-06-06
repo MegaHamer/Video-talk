@@ -71,7 +71,7 @@ export class UsersService {
         username,
         password_hash: hashedPassword,
         avatar_url: avatar,
-        status: 'OFFLINE',
+        // status: 'OFFLINE',
       },
     });
 
@@ -85,7 +85,7 @@ export class UsersService {
       id: user.id,
       username: user.username,
       avatar: user.avatar_url,
-      status: user.status,
+      // status: user.status,
       globalName: user.globalName,
     };
   }
@@ -106,13 +106,22 @@ export class UsersService {
       }
     }
 
-    return this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: {
         globalName: dto.globalName ?? user.globalName,
-        avatar_url: avatarPath ?? "",
+        avatar_url: avatarPath ?? '',
       },
     });
+
+    return {
+      id: updatedUser.id,
+      username: updatedUser.username,
+      avatar: updatedUser.avatar_url,
+      email: updatedUser.email,
+      // status: user.status,
+      globalName: updatedUser.globalName,
+    };
   }
 
   private getIconPath(file: Express.Multer.File): string {

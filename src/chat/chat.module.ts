@@ -20,7 +20,9 @@ import { MediasoupModule } from 'src/mediasoup/mediasoup.module';
     forwardRef(() => MediasoupModule),
   ],
   controllers: [ChatController],
-  providers: [PrismaService, ChatService, ChatGateway, SocketSessionMiddleware],
+  providers: [PrismaService, ChatService, 
+    // ChatGateway, 
+    SocketSessionMiddleware],
   exports: [ChatService],
 })
 export class ChatModule {}

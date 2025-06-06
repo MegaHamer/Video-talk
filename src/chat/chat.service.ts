@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -19,6 +21,7 @@ import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { MediasoupService } from 'src/mediasoup/mediasoup.service';
 import * as argon2 from 'argon2';
+import { MediasoupGateway } from 'src/mediasoup/mediasoup.gateway';
 
 @Injectable()
 export class ChatService {
@@ -26,6 +29,8 @@ export class ChatService {
     private userService: UsersService,
     private readonly prisma: PrismaService,
     private mediasoupService: MediasoupService,
+    @Inject(forwardRef(() => MediasoupGateway))
+    private readonly mediasoupGateway: MediasoupGateway
   ) {}
 
   // async getAllChats(userId: number) {
@@ -367,19 +372,19 @@ export class ChatService {
     });
   }
 
-  async generate_room(name: string, ownerId: number, password?: string) {
-    const hashedPassword = password
-      ? await argon2.hash(password, {
-          type: argon2.argon2id,
-          memoryCost: 65536,
-        })
-      : null;
+  async generate_room( ownerId: number, ) {
+    // const hashedPassword = password
+    //   ? await argon2.hash(password, {
+    //       type: argon2.argon2id,
+    //       memoryCost: 65536,
+    //     })
+    //   : null;
 
     return this.prisma.chat.create({
       data: {
-        name,
+        // name,
         ownerId,
-        passwordHash: hashedPassword,
+        // passwordHash: hashedPassword,
       },
     });
   }
@@ -394,14 +399,39 @@ export class ChatService {
     }
     //user in chat exist
 
-    //create massage
-    return await this.prisma.message.create({
+    const message = await this.prisma.message.create({
       data: {
         content: massage_content,
         chatId: chat.id,
         senderId: userId,
       },
+      select: {
+        sender: true,
+        id: true,
+        chatId: true,
+        createdAt: true,
+        updatedAt: true,
+        content: true,
+      },
     });
+
+    const payload = {
+      messageId: message.id,
+      chatId: message.chatId,
+      user: {
+        id: message.sender.id,
+        globalName: message.sender.globalName,
+        username: message.sender.username,
+      },
+      createdAt: message.createdAt,
+      updatedAt: message.updatedAt,
+      content: message.content,
+    };
+
+    await this.mediasoupGateway.userSendMessage(userId, chatId, payload);
+
+    //create massage
+    return payload;
   }
 
   async get_messages(userId: number, chatId: string) {

@@ -19,7 +19,7 @@ model User {
   email         String     @unique
   password_hash String
   avatar_url    String
-  status        UserStatus
+  // status        UserStatus
 
   // sentRelationship     Relationship[] @relation("RequesterRelationship")
   // receivedRelationship Relationship[] @relation("RecipientRelationship")
@@ -58,12 +58,12 @@ model Chat {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  name         String
-  passwordHash String?
+  // name         String
+  // passwordHash String?
   ownerId      Int
   owner        User    @relation("OwnerChat", fields: [ownerId], references: [id])
 
-  maxParticipants Int @default(10)
+  // maxParticipants Int @default(10)
 
   messages Message[]    @relation("MessageChat")
   // members  ChatMember[] @relation("ChatMemberChat")
@@ -96,10 +96,10 @@ model Message {
   chat     Chat   @relation("MessageChat", fields: [chatId], references: [id], onDelete: Cascade)
   chatId   String
 
-  reply     Message? @relation("ReplyMessage", fields: [replyToId], references: [id])
-  replyToId Int?
+  // reply     Message? @relation("ReplyMessage", fields: [replyToId], references: [id])
+  // replyToId Int?
 
-  ReferencingMessages Message[] @relation("ReplyMessage")
+  // ReferencingMessages Message[] @relation("ReplyMessage")
 }
 
 //сессии

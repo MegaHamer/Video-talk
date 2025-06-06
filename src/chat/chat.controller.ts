@@ -62,7 +62,7 @@ export class ChatController {
     @CurrentUser() user: User,
     @Body() { recipients }: RecipientsDTO,
   ) {
-    return await this.chatService.generate_room('', user.id);
+    return await this.chatService.generate_room( user.id);
   }
 
   @HttpCode(HttpStatus.NO_CONTENT) //ok
@@ -117,6 +117,8 @@ export class ChatController {
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiParam({ name: 'chatId' })
+  @ApiParam({ name: 'messageId' })
   @Delete(':chatId/messages/:messageId')
   async DeleteMessage(
     @CurrentUser() user: User,

@@ -20,7 +20,7 @@ import { RelationsService } from 'src/relations/relations.service';
 import { RequestTypeDto } from 'src/relations/dto/requestType.dto';
 import { UserProfileDto } from './dto/profile.dto';
 import { UpdateUserDto } from './dto/update.dto';
-import { ApiConsumes } from '@nestjs/swagger';
+import { ApiConsumes, ApiParam } from '@nestjs/swagger';
 import { multerOptions } from './config/multer.config';
 
 @Controller('users')
@@ -31,6 +31,7 @@ export class UsersController {
   ) {}
 
   @Get(':userId/profile')
+  @ApiParam({ name: 'userId' })
   async getProfile(
     @CurrentUser() user: User,
     @Param() reciever: UserProfileDto,
@@ -47,7 +48,7 @@ export class UsersController {
   @Put('me')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('avatar', multerOptions))
-  async updateCurrentUser(
+  async updateUser(
     @CurrentUser() user: User,
     @Body() dto: UpdateUserDto,
     @UploadedFile() avatarFile?: Express.Multer.File,

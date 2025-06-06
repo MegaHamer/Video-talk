@@ -8,7 +8,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { SocketSessionMiddleware } from 'src/chat/middleware/socket.middleware';
 import * as mediasoup from 'mediasoup';
-import { OnModuleInit } from '@nestjs/common';
+import { forwardRef, Inject, OnModuleInit } from '@nestjs/common';
 import { ChatService } from 'src/chat/chat.service';
 import { MediasoupService } from './mediasoup.service';
 import { subscribe } from 'diagnostics_channel';
@@ -29,6 +29,7 @@ export class MediasoupGateway
 
   constructor(
     private socketSessionMiddleware: SocketSessionMiddleware,
+    @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
     private readonly mediasoupService: MediasoupService,
     private MSWorkerProvider: MediasoupWorkerProvider,
@@ -81,7 +82,7 @@ export class MediasoupGateway
             rtpCapabilities,
             client,
           );
-          
+
           client.emit('member-created');
           client.broadcast
             .to(`chat ${chat.id}`)
@@ -108,7 +109,6 @@ export class MediasoupGateway
         .to(`chat ${chatId}`)
         .emit('member-disconnect', { memberId: userId });
       room.deleteMember(userId);
-      
 
       console.log('soup user dissconnect', client.id);
     } catch (error) {
@@ -161,7 +161,7 @@ export class MediasoupGateway
       rtpParameters,
       type,
     );
-    console.log("transport-produce",chatId)
+    console.log('transport-produce', chatId);
     client.broadcast.to(`chat ${chatId}`).emit('new-producer', {
       id: userId,
       producer: {
@@ -249,5 +249,14 @@ export class MediasoupGateway
     client.broadcast.to(`chat ${chatId}`).emit('user-unmuted', {
       id: userId,
     });
+  }
+
+  async userSendMessage(userId, chatId, message) {
+    // this.server.
+
+    this.server
+      .to(`chat ${chatId}`)
+      .except(`user ${userId}`)
+      .emit('new_message', message);
   }
 }
